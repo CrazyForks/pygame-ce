@@ -1,13 +1,14 @@
-"""Debug functionality that allows for more useful issue reporting
-"""
+"""Debug functionality that allows for more useful issue reporting"""
 
 import platform
 import sys
 import traceback
 import importlib
 from typing import Tuple, Optional, Callable
+from os import environ
 
 from pygame.version import ver
+from pygame.system import get_cpu_instruction_sets
 
 ImportResult = Tuple[str, bool, Optional[Callable]]
 
@@ -34,7 +35,7 @@ def attempt_import(module, function_name, output_str=""):
     Args:
         module: string representing module name
         function_name: string representing function name to be imported
-        output_str: optional string to prepend error messagess to if one occurs
+        output_str: optional string to prepend error messages to if one occurs
 
     Returns:
         tuple(str, bool, Any):
@@ -60,10 +61,14 @@ def _get_platform_info():
     """
     Internal helper to get platform information
     """
+    cpu_inst_dict = get_cpu_instruction_sets()
+    sse2 = 'Yes' if cpu_inst_dict['SSE2'] else 'No'
+    avx2 = 'Yes' if cpu_inst_dict['AVX2'] else 'No'
+    neon = 'Yes' if cpu_inst_dict['NEON'] else 'No'
     ret = f"Platform:\t\t{platform.platform()}\n"
     ret += f"System:\t\t\t{platform.system()}\n"
     ret += f"System Version:\t\t{platform.version()}\n"
-    ret += f"Processor:\t\t{platform.processor()}\n"
+    ret += f"Processor:\t\t{platform.processor()}\tSSE2: {sse2}\tAVX2: {avx2}\tNEON: {neon}\n"
     ret += (
         f"Architecture:\t\tBits: {platform.architecture()[0]}\t"
         f"Linkage: {platform.architecture()[1]}\n\n"
@@ -156,7 +161,14 @@ def print_debug_info(filename=None):
     )
 
     if display_init():
-        debug_str += f"Display Driver:\t\t{get_display_driver()}\n"
+        driver = get_display_driver()
+        if driver.upper() != "X11":
+            debug_str += f"Display Driver:\t\t{driver}\n"
+        else:
+            is_xwayland = (environ.get("XDG_SESSION_TYPE") == "wayland") or (
+                "WAYLAND_DISPLAY" in environ
+            )
+            debug_str += f"Display Driver:\t\t{driver} ( xwayland == {is_xwayland} )\n"
     else:
         debug_str += "Display Driver:\t\tDisplay Not Initialized\n"
 
