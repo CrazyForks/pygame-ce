@@ -116,6 +116,7 @@ COLOR_FROM_SPACE(hsla);
 COLOR_FROM_SPACE(cmy);
 COLOR_FROM_SPACE(i1i2i3);
 COLOR_FROM_SPACE(normalized);
+COLOR_FROM_SPACE(hex);
 #undef COLOR_FROM_SPACE
 
 /* Getters/setters */
@@ -240,6 +241,8 @@ static PyMethodDef _color_methods[] = {
      DOC_COLOR_FROMI1I2I3},
     {"from_normalized", (PyCFunction)_color_from_normalized,
      METH_CLASS | METH_VARARGS, DOC_COLOR_FROMNORMALIZED},
+    {"from_hex", (PyCFunction)_color_from_hex, METH_CLASS | METH_VARARGS,
+     DOC_COLOR_FROMHEX},
     {"normalize", (PyCFunction)_color_normalize, METH_NOARGS,
      DOC_COLOR_NORMALIZE},
     {"correct_gamma", (PyCFunction)_color_correct_gamma, METH_VARARGS,
@@ -722,6 +725,9 @@ _color_from_space(char *space, PyObject *args)
     }
     else if (strcmp(space, "normalized") == 0) {
         set_success = _color_set_normalized(color, args, NULL);
+    }
+    else if (strcmp(space, "hex") == 0) {
+        set_success = _color_set_hex(color, args, NULL);
     }
 
     if (set_success != 0) {
@@ -1731,7 +1737,7 @@ _color_inv(pgColorObject *color)
 static PyObject *
 _color_int(pgColorObject *color)
 {
-    Uint32 tmp = (color->data[0] << 24) + (color->data[1] << 16) +
+    Uint32 tmp = ((Uint32)color->data[0] << 24) + (color->data[1] << 16) +
                  (color->data[2] << 8) + color->data[3];
     return PyLong_FromUnsignedLong(tmp);
 }
@@ -1742,7 +1748,7 @@ _color_int(pgColorObject *color)
 static PyObject *
 _color_float(pgColorObject *color)
 {
-    Uint32 tmp = ((color->data[0] << 24) + (color->data[1] << 16) +
+    Uint32 tmp = (((Uint32)color->data[0] << 24) + (color->data[1] << 16) +
                   (color->data[2] << 8) + color->data[3]);
     return PyFloat_FromDouble((double)tmp);
 }
